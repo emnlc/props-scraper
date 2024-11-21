@@ -1,5 +1,4 @@
 from selenium_driverless import webdriver
-from selenium.webdriver.common.by import By
 from collections import defaultdict
 
 import asyncio
@@ -37,15 +36,27 @@ def shorten_market(market):
         return "STL"
     
 
-async def scraper_v2():
-    async with webdriver.Chrome() as browser:
-
+async def scraper():
+    options = webdriver.ChromeOptions()
+    options.add_argument("--headless")
+    options.add_argument("--disable-gpu")
+    options.add_argument("--no-sandbox")
+    
+    async with webdriver.Chrome(options=options) as browser:
+        print("getting ready to scrape. . .")
         # open the target website
         await browser.get("https://www.sportsgrid.com/nba/player-props")
         # implicitly wait for the page to load
-        await browser.sleep(3)
+        await browser.sleep(5)
         
         main_container = await browser.find_element("css selector", "main.site-main div")
+        
+        try:
+            button = await main_container.find_element("xpath", "./div[3]//div//button")
+        except Exception as _:
+            print("No data yet. . .")
+            return
+        
         table = await main_container.find_element("xpath", "./div[2]")
         button = await main_container.find_element("xpath", "./div[3]//div//button")
         await button.click()
@@ -54,7 +65,7 @@ async def scraper_v2():
         rows = await table.find_elements("css selector", "div.desk-view")
         # print(len(rows))
         for _, row in enumerate(rows):
-            # await browser.sleep(1)
+            await browser.sleep(1)
             row_data = await row.find_element("css selector", "div div div div div")
             
             # game title
@@ -76,8 +87,9 @@ async def scraper_v2():
             line = market_description_array[0]
             market = shorten_market(" ".join(market_description_array[1:]))
             
-            GAME_LINES[game_title][market][player_name]["line"] = line        
+            GAME_LINES[game_title][market][player_name]["line"] = line
+    print("scraping finished!")
     
 def get_game_lines():
-    asyncio.run(scraper_v2())
+    asyncio.run(scraper())
     return GAME_LINES

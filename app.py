@@ -11,12 +11,11 @@ def fetch_game_lines():
     data = get_game_lines()
     GAME_LINES_CACHE = convert_to_dict(data)
 
-@app.route('/api/game-lines', methods=['GET'])
+@app.route('/api/nba', methods=['GET'])
 def game_lines():
     """
     Endpoint to fetch scraped game lines.
     """
-    
     # Convert defaultdict to regular dict before sending as JSON
     return jsonify(GAME_LINES_CACHE)
 
@@ -29,6 +28,6 @@ if __name__ == "__main__":
     
     # Run the Flask app
     try:
-        app.run(debug=True)
+        app.run(debug=True, host='0.0.0.0')
     except (KeyboardInterrupt, SystemExit):
         scheduler.shutdown()
