@@ -59,22 +59,23 @@ async def scraper():
             pass
         
         main_container = await browser.find_element("css selector", "main.site-main div")
-        
+        button = None
         try:
             # ensure props are available
-            await main_container.find_element("xpath", "./div[3]//div//button")
+            button = await main_container.find_element("xpath", "./div[3]//div//button")
         except Exception as _:
             print("No data yet. . .")
             return
         
-        button = await main_container.find_element("xpath", "./div[3]//div//button")
+        table = await main_container.find_element("xpath", "./div[2]")
+        if not button:
+            return
+
         await button.click()
         await browser.sleep(5)
         
-        table = await main_container.find_element("xpath", "./div[2]")
-        
         rows = await table.find_elements("css selector", "div.desk-view")
-        # print(f"{len(rows)} total props found!")
+        print(f"{len(rows)} total props found!")
         for _, row in enumerate(rows):
             await browser.sleep(1)
             row_data = await row.find_element("css selector", "div div div div div")
@@ -104,3 +105,5 @@ async def scraper():
 def get_game_lines():
     asyncio.run(scraper())
     return GAME_LINES
+
+get_game_lines()
