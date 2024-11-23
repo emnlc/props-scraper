@@ -49,21 +49,32 @@ async def scraper():
         # implicitly wait for the page to load
         await browser.sleep(5)
         
+        # personal data consent form
+        try:
+            consent_form = await browser.find_element("css selector", "div.fc-consent-root")
+            consenst_button = await consent_form.find_element("xpath", "./div[2]//div[2]//div[2]//button[2]")
+            await consenst_button.click()
+            await browser.sleep(5)
+        except Exception as _:
+            pass
+        
         main_container = await browser.find_element("css selector", "main.site-main div")
         
         try:
-            button = await main_container.find_element("xpath", "./div[3]//div//button")
+            # ensure props are available
+            await main_container.find_element("xpath", "./div[3]//div//button")
         except Exception as _:
             print("No data yet. . .")
             return
         
-        table = await main_container.find_element("xpath", "./div[2]")
         button = await main_container.find_element("xpath", "./div[3]//div//button")
         await button.click()
-        await browser.sleep(3)
+        await browser.sleep(5)
+        
+        table = await main_container.find_element("xpath", "./div[2]")
         
         rows = await table.find_elements("css selector", "div.desk-view")
-        # print(len(rows))
+        # print(f"{len(rows)} total props found!")
         for _, row in enumerate(rows):
             await browser.sleep(1)
             row_data = await row.find_element("css selector", "div div div div div")

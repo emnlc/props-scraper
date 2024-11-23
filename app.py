@@ -13,10 +13,7 @@ def fetch_game_lines():
 
 @app.route('/api/nba', methods=['GET'])
 def game_lines():
-    """
-    Endpoint to fetch scraped game lines.
-    """
-    # Convert defaultdict to regular dict before sending as JSON
+    # Convert to regular dict
     return jsonify(GAME_LINES_CACHE)
 
 if __name__ == "__main__":
