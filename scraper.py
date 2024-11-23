@@ -47,7 +47,7 @@ async def scraper():
         # open the target website
         await browser.get("https://www.sportsgrid.com/nba/player-props")
         # implicitly wait for the page to load
-        await browser.sleep(5)
+        await browser.sleep(10)
         
         # personal data consent form
         try:
@@ -56,7 +56,7 @@ async def scraper():
             await consenst_button.click()
             await browser.sleep(5)
         except Exception as _:
-            pass
+            print("no form found")
         
         main_container = await browser.find_element("css selector", "main.site-main div")
         button = None
@@ -69,6 +69,7 @@ async def scraper():
         
         table = await main_container.find_element("xpath", "./div[2]")
         if not button:
+            print("no button")
             return
 
         await button.click()
@@ -105,5 +106,3 @@ async def scraper():
 def get_game_lines():
     asyncio.run(scraper())
     return GAME_LINES
-
-get_game_lines()

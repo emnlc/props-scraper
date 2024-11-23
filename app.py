@@ -17,11 +17,11 @@ def game_lines():
     return jsonify(GAME_LINES_CACHE)
 
 if __name__ == "__main__":
+    fetch_game_lines()
     scheduler = BackgroundScheduler()
     scheduler.add_job(fetch_game_lines, "interval", minutes=15)
     scheduler.start()
     
-    fetch_game_lines()
     
     # Run the Flask app
     try:
