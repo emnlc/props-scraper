@@ -22,7 +22,6 @@ if __name__ == "__main__":
     scheduler.add_job(fetch_game_lines, "interval", minutes=15)
     scheduler.start()
     
-    
     # Run the Flask app
     try:
         app.run(host='0.0.0.0', port=8080)

@@ -1,9 +1,28 @@
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium_driverless import webdriver
 from collections import defaultdict
 
 import asyncio
+import random
 
 GAME_LINES = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+
+MARKET_SHORTEN = {
+    "3 Point FG Made": "3PT",
+    "Assists": "AST",
+    "Blocks": "BLK",
+    "Points": "PTS",
+    "Pts + Ast": "PA",
+    "Pts + Reb": "PR",
+    "Pts + Reb + Ast": "PRA",
+    "Reb + Ast": "RA",
+    "Rebounds": "REB",
+    "Steals": "STL",
+}
+
+DELAY = random.uniform(5, 10)
 
 def convert_to_dict(d):
     if isinstance(d, defaultdict):
@@ -14,28 +33,8 @@ def convert_to_dict(d):
         return d
     
 def shorten_market(market):
-    if market == "3 Point FG Made":
-        return "3PT"
-    elif market == "Assists":
-        return "AST"
-    elif market == "Blocks":
-        return "BLK"
-    elif market == "Points":
-        return "PTS"
-    elif market == "Pts + Ast":
-        return "PA"
-    elif market == "Pts + Reb":
-        return "PR"
-    elif market == "Pts + Reb + Ast":
-        return "PRA"
-    elif market == "Reb + Ast":
-        return "RA"
-    elif market == "Rebounds":
-        return "REB"
-    elif market == "Steals":
-        return "STL"
+    return MARKET_SHORTEN.get(market, market)
     
-
 async def scraper():
     options = webdriver.ChromeOptions()
     options.add_argument("--headless")
@@ -45,40 +44,47 @@ async def scraper():
     async with webdriver.Chrome(options=options) as browser:
         print("getting ready to scrape. . .")
         # open the target website
-        await browser.get("https://www.sportsgrid.com/nba/player-props")
-        # implicitly wait for the page to load
-        await browser.sleep(10)
+        await browser.get("https://www.sportsgrid.com/nba/player-props", timeout=60)
+        await browser.sleep(DELAY)
         
-        # personal data consent form
+        # CONSENT FORM
         try:
-            consent_form = await browser.find_element("css selector", "div.fc-consent-root")
-            consenst_button = await consent_form.find_element("xpath", "./div[2]//div[2]//div[2]//button[2]")
+            consent_form = await WebDriverWait(browser, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.fc-consent-root"))
+            )
+            
+            consenst_button = await WebDriverWait(consent_form, 15).until(
+                EC.presence_of_element_located((By.XPATH, "./div[2]//div[2]//div[2]//button[2]"))
+            )
+            
             await consenst_button.click()
-            await browser.sleep(5)
+            await browser.sleep(DELAY)
         except Exception as _:
             print("no form found")
         
-        main_container = await browser.find_element("css selector", "main.site-main div")
-        button = None
+        # MAIN CONTAINER 
         try:
-            # ensure props are available
+            main_container = await WebDriverWait(browser, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "main.site-main div"))
+            )
+        except asyncio.TimeoutError:
+            print("Timeout searching for main container")
+            return
+        
+        # LOAD BUTTON
+        try:
             button = await main_container.find_element("xpath", "./div[3]//div//button")
+            await button.click()
         except Exception as _:
-            print("No data yet. . .")
+            print("No button found or no data available.")
             return
         
-        table = await main_container.find_element("xpath", "./div[2]")
-        if not button:
-            print("no button")
-            return
-
-        await button.click()
-        await browser.sleep(5)
-        
+        table = await main_container.find_element("xpath", "./div[2]")        
         rows = await table.find_elements("css selector", "div.desk-view")
         print(f"{len(rows)} total props found!")
+        
         for _, row in enumerate(rows):
-            await browser.sleep(1)
+            await browser.sleep(random.uniform(0.5, 1))
             row_data = await row.find_element("css selector", "div div div div div")
             
             # game title
