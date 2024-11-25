@@ -13,11 +13,14 @@ RUN apt-get update && apt-get install -y \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Install Gunicorn
+RUN pip install gunicorn
+
 # Copy application code
 COPY . .
 
 # Expose the Flask port
-EXPOSE 5000
+EXPOSE 8080
 
 # Set the default command
-CMD ["python", "app.py"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "app:app"]

@@ -19,7 +19,7 @@ def game_lines():
 if __name__ == "__main__":
     fetch_game_lines()
     scheduler = BackgroundScheduler()
-    scheduler.add_job(fetch_game_lines, "interval", minutes=15)
+    scheduler.add_job(fetch_game_lines, "interval", minutes=10)
     scheduler.start()
     
     # Run the Flask app
