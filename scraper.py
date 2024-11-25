@@ -44,6 +44,7 @@ async def scraper():
     async with webdriver.Chrome(options=options) as browser:
         print("getting ready to scrape. . .")
         # open the target website
+        await browser.maximize_window()
         await browser.get("https://www.sportsgrid.com/nba/player-props", timeout=60)
         await browser.sleep(DELAY)
         
@@ -61,6 +62,24 @@ async def scraper():
             await browser.sleep(DELAY)
         except Exception as _:
             print("no form found")
+            
+        # TARGET DRAFTKINGS
+        try:
+            sportsbook_options_button = await WebDriverWait(browser, 15).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "div.dropdownContainer"))
+            )
+            await sportsbook_options_button.click()
+            await browser.sleep(DELAY)
+        except asyncio.TimeoutError:
+            print("Timeout searching for sportsbook options button")
+            return
+        
+        try:
+            draftkings_button = await sportsbook_options_button.find_element("xpath", "..//ul//li[1]")
+            await draftkings_button.click()
+            await browser.sleep(DELAY)
+        except asyncio.TimeoutError:
+            print("Timeout searching for sportsbook options")
         
         # MAIN CONTAINER 
         try:
@@ -112,3 +131,5 @@ async def scraper():
 def get_game_lines():
     asyncio.run(scraper())
     return GAME_LINES
+
+print(get_game_lines())
