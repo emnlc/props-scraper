@@ -1,10 +1,5 @@
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.common.by import By
 from selenium_driverless import webdriver
 from collections import defaultdict
-
-import asyncio
 import random
 
 GAME_LINES = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
@@ -37,60 +32,57 @@ def shorten_market(market):
     
 async def scraper():
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless")
+    options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
     
     async with webdriver.Chrome(options=options) as browser:
         print("getting ready to scrape. . .")
         # open the target website
-        await browser.maximize_window()
         await browser.get("https://www.sportsgrid.com/nba/player-props", timeout=60)
         await browser.sleep(DELAY)
         
         # CONSENT FORM
         try:
-            consent_form = await WebDriverWait(browser, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div.fc-consent-root"))
-            )
+            consent_form = await browser.find_element("css selector", "div.fc-consent-root")
+            consent_button = await consent_form.find_element("xpath", "./div[2]//div[2]//div[2]//button[2]")
             
-            consenst_button = await WebDriverWait(consent_form, 15).until(
-                EC.presence_of_element_located((By.XPATH, "./div[2]//div[2]//div[2]//button[2]"))
-            )
-            
-            await consenst_button.click()
+            await consent_button.click()
             await browser.sleep(DELAY)
         except Exception as _:
             print("no form found")
-            
-        # TARGET DRAFTKINGS
+
+        # TARGET DRAFTKINGS IF POSSIBLE
         try:
-            sportsbook_options_button = await WebDriverWait(browser, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "div.dropdownContainer"))
-            )
+            filter_container = await browser.find_element("css selector", "div.style_sidebarContainer___e2rA div div div div")
+            await filter_container.click()
+            await browser.sleep(DELAY)
+            
+            sportsbook_options_button = await browser.find_element("css selector", "div.dropdownContainer")
             await sportsbook_options_button.click()
             await browser.sleep(DELAY)
-        except asyncio.TimeoutError:
-            print("Timeout searching for sportsbook options button")
-            return
-        
-        try:
+            
             draftkings_button = await sportsbook_options_button.find_element("xpath", "..//ul//li[1]")
             await draftkings_button.click()
             await browser.sleep(DELAY)
-        except asyncio.TimeoutError:
-            print("Timeout searching for sportsbook options")
+            print("Now using DraftKings lines")
+            
+            back_button_container = await browser.find_element("css selector", "div.style_sidebarContainer___e2rA div")
+            back_button = await back_button_container.find_element("xpath", "./div[2]//div[1]//div")
+
+            await back_button.click()
+            await browser.sleep(DELAY)
+        except Exception as _:
+            print("Couldn't load DraftKings lines, staying with FanDuel lines.")
         
         # MAIN CONTAINER 
         try:
-            main_container = await WebDriverWait(browser, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, "main.site-main div"))
-            )
-        except asyncio.TimeoutError:
+            main_container = await browser.find_element("css selector", "main.site-main div")
+        except Exception as _:
             print("Timeout searching for main container")
             return
         
-        # LOAD BUTTON
+        # LOAD MORE BUTTON
         try:
             button = await main_container.find_element("xpath", "./div[3]//div//button")
             await button.click()
@@ -128,8 +120,6 @@ async def scraper():
             GAME_LINES[game_title][market][player_name]["line"] = line
     print("scraping finished!")
     
-def get_game_lines():
-    asyncio.run(scraper())
+async def get_game_lines():
+    await scraper()
     return GAME_LINES
-
-print(get_game_lines())
