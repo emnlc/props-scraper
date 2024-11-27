@@ -5,15 +5,17 @@ import random
 GAME_LINES = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
 
 MARKET_SHORTEN = {
-    "3 Point FG Made": "3PT",
-    "Assists": "AST",
-    "Blocks": "BLK",
     "Points": "PTS",
+    "Rebounds": "REB",
+    "Assists": "AST",
+    "3 Point FG Made": "3PT",
     "Pts + Ast": "PA",
     "Pts + Reb": "PR",
-    "Pts + Reb + Ast": "PRA",
     "Reb + Ast": "RA",
-    "Rebounds": "REB",
+    "Pts + Reb + Ast": "PRA",
+    "Blocks": "BLK",
+    "Turnovers": "TO",
+    "Stl + Blk": "SB",
     "Steals": "STL",
 }
 
