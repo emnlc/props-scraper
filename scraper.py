@@ -2,8 +2,6 @@ from selenium_driverless import webdriver
 from collections import defaultdict
 import random
 
-GAME_LINES = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
-
 MARKET_SHORTEN = {
     "Points": "PTS",
     "Rebounds": "REB",
@@ -33,10 +31,13 @@ def shorten_market(market):
     return MARKET_SHORTEN.get(market, market)
     
 async def scraper():
+    GAME_LINES = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
+    
     options = webdriver.ChromeOptions()
     options.add_argument("--headless=new")
     options.add_argument("--disable-gpu")
     options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
     
     async with webdriver.Chrome(options=options) as browser:
         print("getting ready to scrape. . .")
@@ -82,7 +83,7 @@ async def scraper():
             main_container = await browser.find_element("css selector", "main.site-main div")
         except Exception as _:
             print("Timeout searching for main container")
-            return
+            return {}
         
         # LOAD MORE BUTTON
         try:
@@ -90,14 +91,14 @@ async def scraper():
             await button.click()
         except Exception as _:
             print("No button found or no data available.")
-            return
+            return {}
         
         table = await main_container.find_element("xpath", "./div[2]")        
         rows = await table.find_elements("css selector", "div.desk-view")
         print(f"{len(rows)} total props found!")
-        
+        GAME_LINES["total_count"] = len(rows)
         for _, row in enumerate(rows):
-            await browser.sleep(random.uniform(0.5, 1))
+            await browser.sleep(random.uniform(0.1, 0.5))
             row_data = await row.find_element("css selector", "div div div div div")
             
             # game title
@@ -119,9 +120,7 @@ async def scraper():
             line = market_description_array[0]
             market = shorten_market(" ".join(market_description_array[1:]))
             
-            GAME_LINES[game_title][market][player_name]["line"] = line
+            GAME_LINES[game_title][player_name][market] = line
+
     print("scraping finished!")
-    
-async def get_game_lines():
-    await scraper()
-    return GAME_LINES
+    return convert_to_dict(GAME_LINES)

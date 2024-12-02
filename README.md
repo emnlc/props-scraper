@@ -13,7 +13,7 @@ docker build -t props-scraper .
 ```
 
 ```
-docker run -d -p 5000:5000 props-scraper
+docker run -d -p 8080:8080 props-scraper
 ```
 
 The endpoint will now be available at: `http://localhost:8080/api/nba/stats`
