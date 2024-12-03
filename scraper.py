@@ -84,6 +84,7 @@ async def scraper():
             main_container = await browser.find_element("css selector", "main.site-main div")
             button = await main_container.find_element("xpath", "./div[3]//div//button")
             
+            await button.click()
             draftkings = True
         except Exception as _:
             """
