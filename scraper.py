@@ -34,13 +34,14 @@ async def scraper():
     GAME_LINES = defaultdict(lambda: defaultdict(lambda: defaultdict(dict)))
     
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--no-sandbox")
-    options.add_argument("--disable-dev-shm-usage")
+    # options.add_argument("--headless=new")
+    # options.add_argument("--disable-gpu")
+    # options.add_argument("--no-sandbox")
+    # options.add_argument("--disable-dev-shm-usage")
     
     async with webdriver.Chrome(options=options) as browser:
         print("getting ready to scrape. . .")
+        draftkings = False
         # open the target website
         await browser.get("https://www.sportsgrid.com/nba/player-props", timeout=60)
         await browser.sleep(DELAY)
@@ -57,6 +58,10 @@ async def scraper():
 
         # TARGET DRAFTKINGS IF POSSIBLE
         try:
+            """
+            Interact with website to select DraftKings as the sportsbook.
+            Determines if there are props, if not continue with FanDuel
+            """
             filter_container = await browser.find_element("css selector", "div.style_sidebarContainer___e2rA div div div div")
             await filter_container.click()
             await browser.sleep(DELAY)
@@ -75,23 +80,51 @@ async def scraper():
 
             await back_button.click()
             await browser.sleep(DELAY)
-        except Exception as _:
-            print("Couldn't load DraftKings lines, staying with FanDuel lines.")
-        
-        # MAIN CONTAINER 
-        try:
+            
             main_container = await browser.find_element("css selector", "main.site-main div")
-        except Exception as _:
-            print("Timeout searching for main container")
-            return {}
-        
-        # LOAD MORE BUTTON
-        try:
             button = await main_container.find_element("xpath", "./div[3]//div//button")
-            await button.click()
+            
+            draftkings = True
         except Exception as _:
-            print("No button found or no data available.")
-            return {}
+            """
+            No DraftKings props were found, interact with website to return to FanDuel as the sportsbook.
+            """
+            print("Couldn't load DraftKings lines, staying with FanDuel lines.")
+            filter_container = await browser.find_element("css selector", "div.style_sidebarContainer___e2rA div div div div")
+            await filter_container.click()
+            await browser.sleep(DELAY)
+            
+            sportsbook_options_button = await browser.find_element("css selector", "div.dropdownContainer")
+            await sportsbook_options_button.click()
+            await browser.sleep(DELAY)
+            
+            draftkings_button = await sportsbook_options_button.find_element("xpath", "..//ul//li[1]")
+            await draftkings_button.click()
+            await browser.sleep(DELAY)
+            print("Now using DraftKings lines")
+            
+            back_button_container = await browser.find_element("css selector", "div.style_sidebarContainer___e2rA div")
+            back_button = await back_button_container.find_element("xpath", "./div[2]//div[1]//div")
+
+            await back_button.click()
+            await browser.sleep(DELAY)
+        
+        # only executes if DraftKings was not selected
+        if not draftkings:
+            # MAIN CONTAINER 
+            try:
+                main_container = await browser.find_element("css selector", "main.site-main div")
+            except Exception as _:
+                print("Timeout searching for main container")
+                return {}
+            
+            # LOAD MORE BUTTON
+            try:
+                button = await main_container.find_element("xpath", "./div[3]//div//button")
+                await button.click()
+            except Exception as _:
+                print("No button found or no data available.")
+                return {}
         
         table = await main_container.find_element("xpath", "./div[2]")        
         rows = await table.find_elements("css selector", "div.desk-view")
@@ -102,12 +135,19 @@ async def scraper():
             row_data = await row.find_element("css selector", "div div div div div")
             
             # game title
+            game_date_element = await row_data.find_element("css selector", "div.team-details p")
             teams_container = await row_data.find_element("css selector", "div.team-details div")
             away_team_element = await teams_container.find_element("xpath", "./div[1]//span")
             home_team_element = await teams_container.find_element("xpath", "./div[3]//span")
             away_team = await away_team_element.text
             home_team = await home_team_element.text
-            game_title = away_team + " " + home_team
+            
+            # game date
+            game_date = await game_date_element.text
+            game_date_array = str(game_date).split()
+            game_date = " ".join(game_date_array[0:2])
+            
+            game_title = away_team + " " + home_team + " " + game_date
             
             # player name
             player_name_element = await row_data.find_element("css selector", "div.player-details a div div p")
