@@ -1,4 +1,6 @@
-selenium_driverless==1.9.4
-fastapi-utilities==0.3.0
-fastapi==0.115.5
-uvicorn==0.32.1
+fastapi-utilities
+python-dotenv
+requests
+uvicorn
+fastapi
+nba_api
